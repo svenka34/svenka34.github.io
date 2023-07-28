@@ -2,8 +2,81 @@
 <html>
 <head>
   <title>NBA Scoring System</title>
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+  <script src="https://unpkg.com/d3-annotation/dist/d3-annotation.min.js"></script>
 </head>
-<body>
-  <h1>Soorya</h1>
+<body onload="init()">
+    <h1> Soorya </h1>
+    <div id="graph"></div>
+    <div id="tooltip" style="position: absolute; visibility: hidden; background: rgba(0, 0, 0, 0.8); color: white; padding: 5px; border-radius: 5px;"></div>
+    <script>
+        async function init() {
+          const data = await d3.csv('https://svenka34.github.io/BBStats2023.csv');
+
+          // Define the dimensions and margins for the graph
+          const margin = { top: 20, right: 30, bottom: 30, left: 50 };
+          const width = 600 - margin.left - margin.right;
+          const height = 400 - margin.top - margin.bottom;
+
+          // Create the SVG element that will contain the graph
+          const svg = d3
+            .select("#graph")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+          // Convert string data to numbers
+          data.forEach((d) => {
+            d.PTS = +d.PTS;
+            d.MIN = +d.MIN;
+            d.RANK = +d.RANK;
+            d.PLAYER = +d.PLAYER;
+          });
+
+          // Create the scales for x and y axes
+          const xScale = d3
+            .scaleLinear()
+            .domain(d3.extent(data, (d) => d.MIN))
+            .range([0, width]);
+
+          const yScale = d3
+            .scaleLinear()
+            .domain(d3.extent(data, (d) => d.PTS))
+            .range([height, 0]);
+
+          // Create and append x and y axes
+          svg
+            .append("g")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(xScale));
+
+          svg.append("g").call(d3.axisLeft(yScale));
+
+          // Create and append circles representing the data points
+          svg
+            .selectAll("circle")
+            .data(data)
+            .enter()
+            .append("circle")
+            .attr("cx", (d) => xScale(d.MIN))
+            .attr("cy", (d) => yScale(d.PTS))
+            .attr("r", (d) => (50 - d.RANK) / 5)
+            .style("fill", "steelblue")
+            .on("mouseover", function (event, d) {
+              // Show player name as a tooltip on mouseover
+              d3.select("#tooltip")
+                .style("visibility", "visible")
+                .text(d.PLAYER) // Assuming player names are in the "player_name" column
+                .style("left", event.pageX + "px")
+                .style("top", event.pageY + "px");
+            })
+            .on("mouseout", function () {
+              // Hide player name tooltip on mouseout
+              d3.select("#tooltip").style("visibility", "hidden");
+            });
+        }
+    </script> 
 </body>
 </html>
