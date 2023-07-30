@@ -1,82 +1,304 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>NBA Scoring System</title>
+  <title>NBA Scoring Shifts</title>
   <script src="https://d3js.org/d3.v5.min.js"></script>
-  <script src="https://unpkg.com/d3-annotation/dist/d3-annotation.min.js"></script>
 </head>
+<style>
+  #graph {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 75vh; /* Set the height of the graph container to the full viewport height */
+  }
+  #slider {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  #buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  #title {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  #tooltip {
+    opacity: 0;
+    position: absolute;
+    text-align: center;
+    width: 200px;
+    height: 150px;
+    background: white;
+    border: 0px;
+  }
+</style>
 <body onload="init()">
-    <h1> Soorya </h1>
-    <div id="graph"></div>
-    <div id="tooltip" style="position: absolute; visibility: hidden; background: rgba(0, 0, 0, 0.8); color: white; padding: 5px; border-radius: 5px;"></div>
-    <script>
-        async function init() {
-          const data = await d3.csv('https://svenka34.github.io/BBStats2023.csv');
+  <div id ='title'>
+    <header>The Shift in NBA Scoring in Last 10 years</header>
+  </div>
+  <br>
+  <div id="buttons">
+    <button id="switchButton2013">2013 Data</button>
+    <button id="switchButton2018">2018 Data</button>
+    <button id="switchButton2023">2023 Data</button>
+  </div>
+  <div id="graph"></div>
+  <div id="slider">
+    <label for="playerCount">Top # of Players:</label>
+    <input type="range" min="0" max="50" value="50" step="5" id="playerCountSlider">
+    <span id="playerCountValue">50</span>
+  </div>
+  <div id = "tooltip" opacity = 0></div>
+  <script>
+    let currentDataSource = null;
+    async function init() {
+      const data = await d3.csv('https://svenka34.github.io/BBStats2013.csv');
+      const data1 = await d3.csv('https://svenka34.github.io/BBStats2018.csv');
+      const data2 = await d3.csv('https://svenka34.github.io/BBStats2023.csv');
 
-          // Define the dimensions and margins for the graph
-          const margin = { top: 20, right: 30, bottom: 30, left: 50 };
-          const width = 600 - margin.left - margin.right;
-          const height = 400 - margin.top - margin.bottom;
+      // Define the dimensions and margins for the graph
+      const margin = { top: 50, right: 50, bottom: 50, left: 50 };
+      const width = 800 - margin.left - margin.right;
+      const height = 600 - margin.top - margin.bottom;
 
-          // Create the SVG element that will contain the graph
-          const svg = d3
-            .select("#graph")
-            .append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
-            .append("g")
-            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+      // Create the SVG element that will contain the graph
+      const svg = d3
+        .select("#graph")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-          // Convert string data to numbers
-          data.forEach((d) => {
-            d.PTS = +d.PTS;
-            d.MIN = +d.MIN;
-            d.RANK = +d.RANK;
-            d.PLAYER = +d.PLAYER;
-          });
+      // Convert string data to numbers
+      data.forEach((d) => {
+        d.PTS = +d.PTS;
+        d.MIN = +d.MIN;
+        d.RANK = +d.RANK;
+        d.PLAYER = d.PLAYER;
+        d.AGE = +d.AGE;
+        d.AST = +d.AST;
+        d.REB = +d.REB;
+      });
 
-          // Create the scales for x and y axes
-          const xScale = d3
-            .scaleLinear()
-            .domain(d3.extent(data, (d) => d.MIN))
-            .range([0, width]);
+      data1.forEach((d) => {
+        d.PTS = +d.PTS;
+        d.MIN = +d.MIN;
+        d.RANK = +d.RANK;
+        d.PLAYER = d.PLAYER;
+        d.AGE = +d.AGE;
+        d.AST = +d.AST;
+        d.REB = +d.REB;
+      });
 
-          const yScale = d3
-            .scaleLinear()
-            .domain(d3.extent(data, (d) => d.PTS))
-            .range([height, 0]);
+      data2.forEach((d) => {
+        d.PTS = +d.PTS;
+        d.MIN = +d.MIN;
+        d.RANK = +d.RANK;
+        d.PLAYER = d.PLAYER;
+        d.AGE = +d.AGE;
+        d.AST = +d.AST;
+        d.REB = +d.REB;
+      });
 
-          // Create and append x and y axes
-          svg
-            .append("g")
-            .attr("transform", "translate(0," + height + ")")
-            .call(d3.axisBottom(xScale));
+      // Calculate average values for PTS and MINS
+      const avgPTS = d3.mean(data, (d) => d.PTS);
+      const avgMINS = d3.mean(data, (d) => d.MIN);
 
-          svg.append("g").call(d3.axisLeft(yScale));
+      const avgPTS1 = d3.mean(data1, (d) => d.PTS);
+      const avgMINS1 = d3.mean(data1, (d) => d.MIN);
 
-          // Create and append circles representing the data points
-          svg
-            .selectAll("circle")
-            .data(data)
-            .enter()
-            .append("circle")
-            .attr("cx", (d) => xScale(d.MIN))
-            .attr("cy", (d) => yScale(d.PTS))
-            .attr("r", (d) => (50 - d.RANK) / 5)
-            .style("fill", "steelblue")
-            .on("mouseover", function (event, d) {
-              // Show player name as a tooltip on mouseover
-              d3.select("#tooltip")
-                .style("visibility", "visible")
-                .text(d.PLAYER) // Assuming player names are in the "player_name" column
-                .style("left", event.pageX + "px")
-                .style("top", event.pageY + "px");
+      const avgPTS2 = d3.mean(data2, (d) => d.PTS);
+      const avgMINS2 = d3.mean(data2, (d) => d.MIN);
+
+      const minpts =  d3.min(data, (d) => d.PTS);
+      const maxpts =  d3.max(data, (d) => d.PTS);
+
+      const minpts1 =  d3.min(data1, (d) => d.PTS);
+      const maxpts1 =  d3.max(data1, (d) => d.PTS);
+
+      const minpts2 =  d3.min(data2, (d) => d.PTS);
+      const maxpts2 =  d3.max(data2, (d) => d.PTS);
+
+      const minmins =  d3.min(data, (d) => d.MIN);
+      const maxmins =  d3.max(data, (d) => d.MIN);
+
+      const minmins1 =  d3.min(data1, (d) => d.MIN);
+      const maxmins1 =  d3.max(data1, (d) => d.MIN);
+
+      const minmins2 =  d3.min(data2, (d) => d.MIN);
+      const maxmins2 =  d3.max(data2, (d) => d.MIN);
+
+      const domainptsx = Math.min(minpts, minpts1, minpts2) - 5;
+      const domainptsy = Math.max(maxpts, maxpts1, maxpts2) + 5;
+      const domainminx = Math.min(minmins, minmins1, minmins2) - 5;
+      const domainminy = Math.max(maxmins, maxmins1, maxmins2)  + 5;
+
+      // Create the scales for x and y axes
+      const xScale = d3
+        .scaleLinear()
+        .domain([domainminx, domainminy])
+        .range([0, width]);
+
+      const yScale = d3
+        .scaleLinear()
+        .domain([domainptsx, domainptsy])
+        .range([height, 0]);
+
+      // Create and append x and y axes
+      svg
+        .append("g")
+        .attr("class", "xAxis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(xScale));
+
+      svg
+        .append("g")
+        .attr("class", "yAxis")
+        .call(d3.axisLeft(yScale));
+
+      // Add x and y axis labels
+      svg.append("text")
+        .attr("class", "axisLabel")
+        .attr("x", width / 2)
+        .attr("y", height + margin.bottom - 10)
+        .style("text-anchor", "middle")
+        .text("Minutes Played");
+
+      svg.append("text")
+        .attr("class", "axisLabel")
+        .attr("x", -height / 2)
+        .attr("y", -margin.left + 20)
+        .style("text-anchor", "middle")
+        .attr("transform", "rotate(-90)")
+        .text("Points Scored");
+
+      // Function to update the graph based on the player count slider value and data source
+      function updateGraph(playerCount, currentData) {
+        const filteredData = currentData.slice(0, playerCount);
+
+        const circles = svg.selectAll("circle").data(filteredData);
+
+        const avgPTS = d3.mean(currentData, (d) => d.PTS);
+        const avgMINS = d3.mean(currentData, (d) => d.MIN);
+
+        var tooltip = d3.select("#tooltip");
+
+        circles
+          .enter()
+          .append("circle")
+          .merge(circles)
+          .attr("cx", (d) => xScale(d.MIN))
+          .attr("cy", (d) => yScale(d.PTS))
+          .attr("r", 5)
+          .style("fill", "steelblue")
+          .on("mouseover", function(d, i) {
+            d3.select(this).style("fill", "darkblue");
+            tooltip.style("opacity", 1)
+              .style("left", d3.event.pageX + "px")
+              .style("top", d3.event.pageY + "px") 
+              .html("Name: " + d.PLAYER + "<br>Rank: " + d.RANK + "<br>Age: " + d.AGE + "<br>PPG: " + d.PTS + "<br>APG: " + d.AST + "<br>RPG: " + d.REB + "<br>Minutes PG: " + d.MIN)
             })
-            .on("mouseout", function () {
-              // Hide player name tooltip on mouseout
-              d3.select("#tooltip").style("visibility", "hidden");
-            });
+          .on("mouseout", function() { 
+            d3.select(this).style("fill", "steelblue");
+            tooltip.style("opacity", 0)});
+
+        circles.exit().remove();
+
+        // Add dashed lines for average PTS and MINS
+        svg.selectAll(".avgLine").remove();
+
+        svg
+          .append("line")
+          .attr("class", "avgLine")
+          .attr("x1", xScale(domainminx))
+          .attr("y1", yScale(avgPTS))
+          .attr("x2", xScale(domainminy))
+          .attr("y2", yScale(avgPTS))
+          .style("stroke", "blue")
+          .style("stroke-dasharray", "3,3");
+
+        svg
+          .append("line")
+          .attr("class", "avgLine")
+          .attr("x1", xScale(avgMINS))
+          .attr("y1", yScale(domainptsx))
+          .attr("x2", xScale(avgMINS))
+          .attr("y2", yScale(domainptsy))
+          .style("stroke", "blue")
+          .style("stroke-dasharray", "3,3");
+
+        // Add average value labels
+        svg.selectAll(".avgValueLabel").remove();
+
+        svg
+          .append("text")
+          .attr("class", "avgValueLabel")
+          .attr("x", xScale(d3.min(currentData, (d) => d.MIN)) + 300)
+          .attr("y", yScale(avgPTS) - 5)
+          .text(`Avg PTS: ${avgPTS.toFixed(2)}`);
+
+        svg
+          .append("text")
+          .attr("class", "avgValueLabel")
+          .attr("x", xScale(avgMINS) + 5)
+          .attr("y", yScale(d3.max(currentData, (d) => d.PTS)) - 15)
+          .text(`Avg MINS: ${avgMINS.toFixed(2)}`);
+
+      }
+
+      // Function to handle the button click event for 2013 data
+      function handle2013ButtonClick() {
+        const playerCount = +playerCountSlider.value;
+        currentDataSource = data;
+        playerCountValue.innerText = playerCount;
+        updateGraph(playerCount, currentDataSource);
+      }
+
+      // Function to handle the button click event for 2018 data
+      function handle2018ButtonClick() {
+        const playerCount = +playerCountSlider.value;
+        currentDataSource = data1;
+        playerCountValue.innerText = playerCount;
+        updateGraph(playerCount, currentDataSource);
+      }
+
+      // Function to handle the button click event for 2023 data
+      function handle2023ButtonClick() {
+        const playerCount = +playerCountSlider.value;
+        currentDataSource = data2;
+        playerCountValue.innerText = playerCount;
+        updateGraph(playerCount, currentDataSource);
+      }
+
+      // Add click event listeners to the buttons
+      const switchButton2013 = document.getElementById("switchButton2013");
+      const switchButton2018 = document.getElementById("switchButton2018");
+      const switchButton2023 = document.getElementById("switchButton2023");
+
+      switchButton2013.addEventListener("click", handle2013ButtonClick);
+      switchButton2018.addEventListener("click", handle2018ButtonClick);
+      switchButton2023.addEventListener("click", handle2023ButtonClick);
+
+      // Slider event listener
+      const playerCountSlider = document.getElementById("playerCountSlider");
+      const playerCountValue = document.getElementById("playerCountValue");
+
+      playerCountSlider.addEventListener("input", function () {
+        const playerCount = +this.value;
+        playerCountValue.innerText = playerCount;
+        if (currentDataSource) {
+          updateGraph(playerCount, currentDataSource);
         }
-    </script> 
+      });
+
+      // Initialize the graph with all players shown
+      updateGraph(+playerCountSlider.value, data);
+    }
+  </script>
 </body>
 </html>
