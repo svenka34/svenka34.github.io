@@ -9,7 +9,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 75vh; /* Set the height of the graph container to the full viewport height */
+    height: 75vh;
   }
   #slider {
     display: flex;
@@ -26,6 +26,12 @@
     justify-content: center;
     align-items: center;
   }
+  #description {
+    display: contents;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+  }
   #tooltip {
     opacity: 0;
     position: absolute;
@@ -38,13 +44,27 @@
 </style>
 <body onload="init()">
   <div id ='title'>
-    <header>The Shift in NBA Scoring in Last 10 years</header>
+    <h1>The Shift in NBA Scoring in Last 10 years</h1>
+  </div>
+  <br>
+  <div id ='description'>
+    <p>
+      The National Basketball Association (NBA), established in 1946, has undergone significant changes over the decades. Among various indicators, scoring metrics like points per game (PPG), assists per game (APG), and rebounds per game (RPG) vividly showcase this evolution. These metrics provide valuable insights into the sport's continuous development year after year.
+      <br>
+      <br>
+      This narrative visualization aims to offer users a captivating journey through the dynamic transformation of scoring patterns in the last decade, shedding light on the players who have shaped these shifts.
+      <br>
+      <br>
+      Since 2013, a noticeable trend emerges: a gradual increase in PPG, all while players maintain an average number of minutes on the court. Several factors contribute to this surge, including the game's heightened athleticism, the refined and more extensively utilized 3-point shooting percentage, and the faster pace of play.
+      <br>
+      <br>
+    </p>
   </div>
   <br>
   <div id="buttons">
-    <button id="switchButton2013">2013 Data</button>
-    <button id="switchButton2018">2018 Data</button>
-    <button id="switchButton2023">2023 Data</button>
+    <button id="switchButton2013">2013</button>
+    <button id="switchButton2018">2018</button>
+    <button id="switchButton2023">2023</button>
   </div>
   <div id="graph"></div>
   <div id="slider">
@@ -60,12 +80,10 @@
       const data1 = await d3.csv('https://svenka34.github.io/BBStats2018.csv');
       const data2 = await d3.csv('https://svenka34.github.io/BBStats2023.csv');
 
-      // Define the dimensions and margins for the graph
       const margin = { top: 50, right: 50, bottom: 50, left: 50 };
       const width = 800 - margin.left - margin.right;
       const height = 600 - margin.top - margin.bottom;
 
-      // Create the SVG element that will contain the graph
       const svg = d3
         .select("#graph")
         .append("svg")
@@ -74,7 +92,6 @@
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-      // Convert string data to numbers
       data.forEach((d) => {
         d.PTS = +d.PTS;
         d.MIN = +d.MIN;
@@ -105,7 +122,6 @@
         d.REB = +d.REB;
       });
 
-      // Calculate average values for PTS and MINS
       const avgPTS = d3.mean(data, (d) => d.PTS);
       const avgMINS = d3.mean(data, (d) => d.MIN);
 
@@ -138,7 +154,6 @@
       const domainminx = Math.min(minmins, minmins1, minmins2) - 5;
       const domainminy = Math.max(maxmins, maxmins1, maxmins2)  + 5;
 
-      // Create the scales for x and y axes
       const xScale = d3
         .scaleLinear()
         .domain([domainminx, domainminy])
@@ -149,7 +164,6 @@
         .domain([domainptsx, domainptsy])
         .range([height, 0]);
 
-      // Create and append x and y axes
       svg
         .append("g")
         .attr("class", "xAxis")
@@ -161,7 +175,7 @@
         .attr("class", "yAxis")
         .call(d3.axisLeft(yScale));
 
-      // Add x and y axis labels
+
       svg.append("text")
         .attr("class", "axisLabel")
         .attr("x", width / 2)
@@ -177,7 +191,6 @@
         .attr("transform", "rotate(-90)")
         .text("Points Scored");
 
-      // Function to update the graph based on the player count slider value and data source
       function updateGraph(playerCount, currentData) {
         const filteredData = currentData.slice(0, playerCount);
 
@@ -209,7 +222,6 @@
 
         circles.exit().remove();
 
-        // Add dashed lines for average PTS and MINS
         svg.selectAll(".avgLine").remove();
 
         svg
@@ -232,7 +244,6 @@
           .style("stroke", "blue")
           .style("stroke-dasharray", "3,3");
 
-        // Add average value labels
         svg.selectAll(".avgValueLabel").remove();
 
         svg
@@ -250,8 +261,6 @@
           .text(`Avg MINS: ${avgMINS.toFixed(2)}`);
 
       }
-
-      // Function to handle the button click event for 2013 data
       function handle2013ButtonClick() {
         const playerCount = +playerCountSlider.value;
         currentDataSource = data;
@@ -259,7 +268,6 @@
         updateGraph(playerCount, currentDataSource);
       }
 
-      // Function to handle the button click event for 2018 data
       function handle2018ButtonClick() {
         const playerCount = +playerCountSlider.value;
         currentDataSource = data1;
@@ -267,7 +275,6 @@
         updateGraph(playerCount, currentDataSource);
       }
 
-      // Function to handle the button click event for 2023 data
       function handle2023ButtonClick() {
         const playerCount = +playerCountSlider.value;
         currentDataSource = data2;
@@ -275,7 +282,6 @@
         updateGraph(playerCount, currentDataSource);
       }
 
-      // Add click event listeners to the buttons
       const switchButton2013 = document.getElementById("switchButton2013");
       const switchButton2018 = document.getElementById("switchButton2018");
       const switchButton2023 = document.getElementById("switchButton2023");
@@ -284,7 +290,6 @@
       switchButton2018.addEventListener("click", handle2018ButtonClick);
       switchButton2023.addEventListener("click", handle2023ButtonClick);
 
-      // Slider event listener
       const playerCountSlider = document.getElementById("playerCountSlider");
       const playerCountValue = document.getElementById("playerCountValue");
 
@@ -295,11 +300,10 @@
           updateGraph(playerCount, currentDataSource);
         }
         else {
-          updateGraph(playerCount, data);
+          updateGraph(playerCount, data)
         }
       });
 
-      // Initialize the graph with all players shown
       updateGraph(+playerCountSlider.value, data);
     }
   </script>
